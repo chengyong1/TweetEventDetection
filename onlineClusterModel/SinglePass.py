@@ -2,6 +2,7 @@
 from Cluster import Cluster
 from twitterModel.Twitter import Twitter
 from collections import defaultdict
+from staticModel.Cooccurrence import getProb
 
 class SinglePass(object):
     def __init__(self, threshold):
@@ -173,7 +174,22 @@ class SinglePass(object):
         return similar
 
     def _getCoOccurrenceSimilar(self, tweet, cluster):
-        return 0
+        """
+        共现相似度，传入传入推文和簇的单词权重字典，从统计模块中计算中当前时间窗口内
+        :param tweet: 推文
+        :param cluster: 簇
+        :return:
+        """
+        tweetWords = tweet.getWordsWeight().keys()
+        clusterWords = cluster.getWordsWeight().keys()
+        m, n = len(tweetWords), len(clusterWords)
+        if m * n == 0:
+            return 0.0
+        similar = 0.0
+        for a in tweetWords:
+            for b in clusterWords:
+                similar += max(getProb(a, b), getProb(b, a))
+        return similar
 
     def _gc(self, cluster):
         """

@@ -6,25 +6,21 @@ from onlineClusterModel.SinglePass import SinglePass
 tweet_db = MongoClient('mongodb://root:FzDwXxCl.121.$Root$@121.48.165.123:30011')['tweets_database']['tweets-2020-01-01']
 cursor = tweet_db.find()
 
-test = SinglePass(1.7)
+test = SinglePass(2.5)
 count = 0
 for tweet in cursor:
     count += 1
     updateProb(tweet)
-    if(count == 1000):
-        print p.keys()
-        print p['trump']
-        print getProb('trump', 'declares')
+    test.addTweet(tweet)
+    if count % 1000 == 0:
+        print "have processed tweet num: " + str(count)
+        clusters = test.getClusters()
+        for cluster in clusters:
+            if len(cluster.textList) >= 5:
+                print cluster
+        test.clustersList = []
         break
-    # if count % 100 == 0:
-    #     print "have processed tweet num: " + str(count)
-    # clusters = test.getClusters()
-    # if len(clusters) >= 500:
-    #     for cluster in clusters:
-    #         if len(cluster.textList) >= 5:
-    #             print cluster
-    #     test.clustersList = []
-    # test.addTweet(tweet)
+
 
 
 
