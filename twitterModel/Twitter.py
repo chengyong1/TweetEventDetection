@@ -131,7 +131,10 @@ class Twitter(object):
             return
         for item in self.words:
             word = item['word'].lower()
-            if isStopWord(word) == False:
+            # 去除单词中的'#'和'@'
+            word = word.replace('#', '').replace('@', '')
+            # 如果单词由数字和字母组成且不是停词才加入
+            if word.isalnum() and isStopWord(word) == False:
                 temp.append(item)
         return temp
 

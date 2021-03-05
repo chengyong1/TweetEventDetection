@@ -3,7 +3,7 @@ from collections import defaultdict, deque
 from twitterModel.Twitter import Twitter
 
 # 统计的事件窗口大小，只统计[当前推文的时间-时间窗口, 当前推文时间]内的推文，默认为24小时
-T = 24
+T = 12
 # 单词两两间共现次数
 p = defaultdict(lambda: defaultdict(lambda: 0))
 # 新建一个双端队列
@@ -46,7 +46,7 @@ def updateProb(tweet):
 
 def getProb(a, b):
     """
-    计算P(b|a)，即a出现的时候b出现的概率, p(b|a) = p(a, b) / p(b) = freq(a, b) / freq(b)，
+    计算P(b|a)，即a出现的时候b出现的概率, p(b|a) = p(a, b) / p(a) = freq(a, b) / freq(a)，
     即为a，b在推文中共同出现的次数比上b出现的次数
     :param a: 单词a
     :param b: 单词b
@@ -55,7 +55,19 @@ def getProb(a, b):
     common = p[a][b]  # a, b共同出现次数
     if common == 0:
         return 0.0
-    b_cnt = p[b][b]  # b出现次数
-    if b_cnt == 0:
+    a_cnt = p[a][a]  # b出现次数
+    if a_cnt == 0:
         return 0.0
-    return common * 1.0 / b_cnt
+    return common * 1.0 / a_cnt
+
+if __name__ == '__main__':
+    dataSet = [[1, ['r', 'z']],
+               [2, ['x', 'y', 't', 's', 'z']],
+               [3, ['z']],
+               [4, ['s', 'x', 'r']],
+               [5, ['x', 'y', 'r', 'z', 't']],
+               [6, ['z', 'x', 'y', 's', 't']]]
+    for item in dataSet:
+        updateProb(item[0], item[1])
+    print p
+    print getProb('z', 'x')
