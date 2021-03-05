@@ -3,13 +3,21 @@ from Cluster import Cluster
 from twitterModel.Twitter import Twitter
 from collections import defaultdict
 from staticModel.Cooccurrence import getProb
+import threading
+from util.common import timer
 
 class SinglePass(object):
-    def __init__(self, threshold):
+    def __init__(self, threshold, threads_num):
         # 当前簇列表，只保留最近的100个簇
         self.clustersList = []
         # 相似度阈值，只有当推文与某个簇相似度大于等于此阈值时才会将该推文加入到该簇中
         self.threshold = threshold
+        # 线程数目
+        self.threads_num = threads_num
+
+        self.mostSimilar = 0.0
+        self.idx = -1
+        self.lock = threading.Lock()
 
     def getClusters(self):
         return self.clustersList
@@ -23,27 +31,69 @@ class SinglePass(object):
         """
         # 将该推文进行封装
         tweet = Twitter(tweet)
-        num = len(self.clustersList)
+        n = len(self.clustersList)
 
+        # 记录簇列表中与当前推文最相似的簇索引和对应的相似度取值
+        self.mostSimilar = 0.0
+        self.idx = -1
+
+        # # 遍历当前簇列表中所有簇，一一计算该推文与这些簇的相似度
+        # for i in range(num):
+        #     cluster = self.clustersList[i]
+        #     similar = self._fusionSimilar(tweet, cluster)
+        #     if similar > mostSimilar:
+        #         mostSimilar = similar
+        #         idx = i
+        if n > 0:
+            threads = []  # 线程对象列表
+            avg = n // self.threads_num  # 每一个线程需要计算的数据量
+            print "thread works: ", avg
+            for i in range(self.threads_num):
+                begin = i * avg
+                end = begin + avg
+                # 遇到不能均分的情况，让最后一个线程处理剩下来所有的
+                if i == self.threads_num - 1:
+                    end = n - 1
+                t = threading.Thread(target=self.func(tweet, begin, end))
+                t.start()
+                threads.append(t)
+
+            for t in threads:
+                t.join()
+
+        if self.mostSimilar >= self.threshold:
+            # 当相似度大于阈值时，将推文放入索引为idx的簇中，并跟新簇信息
+            self._update(tweet, self.idx)
+            # 只保留簇中重要信息，减少内存占用和时间消耗，同时减少噪声带来的影响
+            self._gc(self.clustersList[self.idx])
+        else:
+            # 否则新建一个簇，该簇目前仅包含当前推文，并放入簇列表
+            self.clustersList.append(self._createCluster(tweet))
+
+    def func(self, tweet, begin, end):
+        """
+        多线程的运行函数，找出当前推特与self.clustersList[begin: end]中最相似的簇的相似度值和索引，并更新
+        :param tweet: 当前推文
+        :param begin: 当前线程只计算簇列表部分簇，开始下标为 begin
+        :param end: 前线程只计算簇列表部分簇，结束下标为 end
+        :return:
+        """
         # 记录簇列表中与当前推文最相似的簇索引和对应的相似度取值
         mostSimilar = 0.0
         idx = -1
         # 遍历当前簇列表中所有簇，一一计算该推文与这些簇的相似度
-        for i in range(num):
+        for i in range(begin, end + 1):
             cluster = self.clustersList[i]
             similar = self._fusionSimilar(tweet, cluster)
             if similar > mostSimilar:
                 mostSimilar = similar
                 idx = i
-
-        if mostSimilar >= self.threshold:
-            # 当相似度大于阈值时，将推文放入索引为idx的簇中，并跟新簇信息
-            self._update(tweet, idx)
-            # 只保留簇中重要信息，减少内存占用和时间消耗，同时减少噪声带来的影响
-            self._gc(self.clustersList[idx])
-        else:
-            # 否则新建一个簇，该簇目前仅包含当前推文，并放入簇列表
-            self.clustersList.append(self._createCluster(tweet))
+        # 这里涉及到全局变量的修改，需要加锁
+        self.lock.acquire()
+        if mostSimilar > self.mostSimilar:
+            self.mostSimilar = mostSimilar
+            self.idx = idx
+        self.lock.release()
 
     def _fusionSimilar(self, tweet, cluster):
         """
@@ -189,6 +239,7 @@ class SinglePass(object):
         for a in tweetWords:
             for b in clusterWords:
                 similar += max(getProb(a, b), getProb(b, a))
+        similar /= (m * n)
         return similar
 
     def _gc(self, cluster):

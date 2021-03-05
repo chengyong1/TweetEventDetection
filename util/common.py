@@ -80,5 +80,23 @@ def timeTrans(timestamp):
     otherStyleTime = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
     return otherStyleTime
 
+
+def timer(func):
+    """
+    记录函数运行时间，导入函数，在函数上标注@timer即可
+    :param func:
+    :return:
+    """
+    def func_wrapper(*args, **kwargs):
+        from time import time
+        time_start = time()
+        result = func(*args, **kwargs)
+        time_end = time()
+        time_spend = time_end - time_start
+        print('%s cost time: %.3f s' % (func.__name__, time_spend))
+        return result
+    return func_wrapper
+
+
 if __name__ == '__main__':
    print timeTrans(1577859568)
