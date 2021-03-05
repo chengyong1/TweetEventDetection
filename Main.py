@@ -10,7 +10,7 @@ cursor = tweet_db.find()
 
 # 设置相似度阈值和线程数目
 similarThreshold = 2.0
-threadNum = 30
+threadNum = 8
 test = SinglePass(similarThreshold, threadNum)
 
 begin = time.clock()

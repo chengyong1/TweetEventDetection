@@ -47,7 +47,7 @@ class SinglePass(object):
         if n > 0:
             threads = []  # 线程对象列表
             avg = n // self.threads_num  # 每一个线程需要计算的数据量
-            print "thread works: ", avg
+            # print "thread works: ", avg
             for i in range(self.threads_num):
                 begin = i * avg
                 end = begin + avg
