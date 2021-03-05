@@ -230,6 +230,7 @@ class SinglePass(object):
         :param cluster: 簇
         :return:
         """
+        return 0.5
         tweetWords = tweet.getWordsWeight().keys()
         clusterWords = cluster.getWordsWeight().keys()
         m, n = len(tweetWords), len(clusterWords)

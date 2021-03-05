@@ -50,7 +50,8 @@ class Twitter(object):
         :return: [经度, 维度]组成的列表，例如：[-118.3965, 34.1649]
         """
         if self.coordinates != None:
-            self.coordinates = self.coordinates.get("coordinates")
+            if isinstance(self.coordinates, dict):
+                self.coordinates = self.coordinates.get("coordinates")
         return self.coordinates
 
     def getLocs(self):

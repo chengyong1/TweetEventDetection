@@ -10,7 +10,7 @@ cursor = tweet_db.find()
 
 # 设置相似度阈值和线程数目
 similarThreshold = 2.0
-threadNum = 8
+threadNum = 4
 test = SinglePass(similarThreshold, threadNum)
 
 begin = time.clock()
@@ -19,17 +19,17 @@ for tweet in cursor:
     count += 1
     updateProb(tweet)
     test.addTweet(tweet)
-    if count % 300 == 0:
+    if count % 1000 == 0:
         print "have processed tweet num: " + str(count)
         clusters = test.getClusters()
         print "cluster num = ", len(clusters)
-        for cluster in clusters:
-            if len(cluster.textList) >= 5:
-                print cluster
+        # for cluster in clusters:
+        #     if len(cluster.textList) >= 5:
+        #         print cluster
         test.clustersList = []
         end = time.clock()
         print "time cost: ", end - begin
-    if count > 1000:
+    if count > 10000:
         break
 
 
